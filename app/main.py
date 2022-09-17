@@ -10,7 +10,7 @@ intents = discord.Intents().all()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=".", intents=intents)
-token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.GX95QG.NKUzm0UW2CaSMEvproLlcyiKmcYvChYf4B5Id4"
+token = ""
 
 messages = []
 # wait_for checks
