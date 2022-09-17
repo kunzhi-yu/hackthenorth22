@@ -1,12 +1,18 @@
 import cohere
+import numpy as np
+import re
 import pandas as pd
+import umap
+import altair as alt
+from sklearn.metrics.pairwise import cosine_similarity
+from annoy import AnnoyIndex
+import warnings
 pd.set_option('display.max_colwidth', None)
+co = cohere.Client('M6me67HOZMMJsVSq2l0102rcX9Xxe2iwfi8cl0wt')
 
 def gettasks():
-    co = cohere.Client('M6me67HOZMMJsVSq2l0102rcX9Xxe2iwfi8cl0wt')
-
-    with open("prompt.txt") as f:
-        prompt = f.readline()
+    # with open("prompt.txt") as f:
+    #    prompt = f.readline()
     # prompt = str(prompt).strip()
     response = co.generate(
         model='large',
@@ -19,12 +25,27 @@ def gettasks():
         presence_penalty=0,
         stop_sequences=["--"],
         return_likelihoods='NONE')
-    print('Prediction: {}'.format(response.generations[0].text))
+    # print('Prediction: {}'.format(response.generations[0].text))
     tasks = response.generations[0].text.strip("\\n--").split(",")
     print(tasks)
 
     return tasks
-gettasks()
+
+
+def embeded():
+    dataset = pd.read_csv("sematic_search_example.csv")
+
+    # Create the search index, pass the size of embedding
+    search_index = AnnoyIndex(embeds.shape[1], 'angular')
+
+    similar_item_ids = search_index.get_nns_by_item(example_id,10,
+                                                    include_distances=True)
+
+    return None
+
+
+if __name__ == "__main__":
+    embeded()
     #
     # class cohereExtractor():
     #     def __init__(self, examples, example_labels, labels, task_desciption, example_prompt):
