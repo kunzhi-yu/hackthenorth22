@@ -10,8 +10,9 @@ from app.db import *
 intents = discord.Intents().all()
 intents.message_content = True
 
+with open("token") as f:
+    token = f.readline()
 bot = commands.Bot(command_prefix=".", intents=intents)
-token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.Gszrk8.SFfLNlTgviBOgxt6KQttYsvt-yIgCp-kvyNBMM"
 
 messages = []
 # wait_for checks
