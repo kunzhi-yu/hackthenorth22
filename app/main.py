@@ -25,7 +25,3 @@ all_data = ref.get()
 def random():
 	return [all_data]
 
-
-if __name__ == '__main__':
-	app.run(debug=True)
-
