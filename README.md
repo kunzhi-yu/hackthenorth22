@@ -1,7 +1,5 @@
 # Hack the North 2022 Submission
-# Hack the North 2022 Submission
 
-## Prototype 1
 Adaptive to-do list
 - You always have things you don't want to do
 - Based off your schedule it will recommend you to do things
