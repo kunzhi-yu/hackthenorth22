@@ -1,5 +1,4 @@
-from flask import Flask
-from flask import jsonify, request
+from flask import Flask, jsonify, request
 
 import firebase_admin
 from firebase_admin import db
@@ -21,10 +20,12 @@ get the data and shit it out
 ref = db.reference("/OverallDB/")
 all_data = ref.get()
 
+# API call to get all the data in a list
 @app.route("/rando", methods=["GET"])
 def random():
 	return [all_data]
 
+
 if __name__ == '__main__':
-    app.run(debug=True) 
+	app.run(debug=True)
 
