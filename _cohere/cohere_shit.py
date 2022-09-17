@@ -2,29 +2,30 @@ import cohere
 import pandas as pd
 pd.set_option('display.max_colwidth', None)
 
-def gettasks()
+def gettasks():
     co = cohere.Client('M6me67HOZMMJsVSq2l0102rcX9Xxe2iwfi8cl0wt')
 
     with open("prompt") as f:
         prompt = f.readline()
-    prompt = prompt.strip()
-
+    prompt = str(prompt).strip()
+    print(prompt)
     response = co.generate(
         model='large',
         prompt=prompt,
-        max_tokens=20,
-        temperature=0.6,
+        max_tokens=40,
+        temperature=0.8,
         k=1,
         p=1,
         frequency_penalty=0,
         presence_penalty=0,
         stop_sequences=["--"],
         return_likelihoods='NONE')
+    print('Prediction: {}'.format(response.generations[0].text))
+    tasks = response.generations[0].text.strip("\\n--").split(",")
+    print(tasks)
 
-    print('Prediction: {}'.format(response.generations[0].text).strip("\\n--"))
-
-
-    return
+    return tasks
+gettasks()
     #
     # class cohereExtractor():
     #     def __init__(self, examples, example_labels, labels, task_desciption, example_prompt):
