@@ -10,7 +10,7 @@ intents = discord.Intents().all()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=".", intents=intents)
-token = ""
+token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.G0MiZQ.at_n0wqmylvth33Uu8q8rRzBwf-hyBadinMRb4"
 
 messages = []
 # wait_for checks
@@ -30,13 +30,24 @@ async def addtask(ctx, title):
         description = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
         await description.reply("Please input a deadline (optional)")
     except asyncio.TimeoutError:
+        description = ""
         await reply.edit(content="No description was added, description was set to none.")
     try:
         deadline = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
-        # put into db
         pass
     except asyncio.TimeoutError:
+        deadline = ""
         await ctx.send("No deadline was added, deadline was set to none.")
+    try:
+        task = {
+            "Deadline": deadline,
+            "description": description,
+            "id": str(ctx.author.id),
+            "taskName": title
+        }
+        await ctx.send("Task successfully added!")
+    except:
+        await ctx.send("Something went wrong.")
 
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
