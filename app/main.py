@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from _cohere.cohere_shit import *
 from _cohere.classification import *
+from db.db import *
 
 intents = discord.Intents().all()
 intents.message_content = True
@@ -45,6 +46,7 @@ async def addtask(ctx, title):
             "id": str(ctx.author.id),
             "taskName": title
         }
+        set_to_db(task)
         await ctx.send("Task successfully added!")
     except:
         await ctx.send("Something went wrong.")
@@ -73,6 +75,11 @@ async def removetask(ctx, title):
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
+
+@bot.command(aliases=["all", "allt"])
+async def alltasks(ctx):
+    records = get_all_db()
+    print(records)
 
 @bot.event
 async def on_message(message):
