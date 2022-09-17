@@ -52,24 +52,25 @@ async def addtask(ctx, title):
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
     # query db and remove task
-    task = title  # should be the contents of the query
-    embed = discord.Embed(title=f"You are about to remove {task.title}", description=task.description)
-    if task.deadline != 0:
-        embed.add_field(name="Deadline", value=task.deadline, inline=False)
-    embed.set_thumbnail(url="deeznuts")
+    task = json.loads(remove_entry(title))
+# should be the contents of the query
+    embed = discord.Embed(title=f"You are about to remove {task['taskName']}", description=task['description'])
+    if task['Deadline'] != 0:
+        embed.add_field(name="Deadline", value=task['Deadline'], inline=False)
+    #embed.set_thumbnail(url="deeznuts")
     embed_msg = await ctx.message.reply(embed=embed)
     # can be buttons, rather should be buttons
     await embed_msg.add_reaction("❌")
     await embed_msg.add_reaction("✅")
     try:
         def check(reaction, user):
-            return reaction.id == user.id
+            return user in reaction.users
         r = await bot.wait_for("reaction", check=check, timeout=60)
         if str(r[0].emoji) == "❌":
             await embed_msg.edit(content="Cancelled")
             return
         elif str(r[0].emoji) == "✅":
-            # remove from db
+            remove_entry2(task)
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
@@ -77,10 +78,17 @@ async def removetask(ctx, title):
 @bot.command(aliases=["all", "allt"])
 async def alltasks(ctx):
     records = json.loads(get_all_db())
+    if isinstance(records, str):
+        records = {"0": records}
     t = list(records.values())
     tasks = [json.loads(i) for i in t]
     relevant_tasks = [i for i in tasks if i["id"] == str(ctx.author.id)]
-    await ctx.send(relevant_tasks)
+    for i in relevant_tasks:
+        embed = discord.Embed(title=i["taskName"], description=i["description"])
+        if i["Deadline"]:
+            embed.add_field(name="Deadline", value=i["Deadline"], inline=False)
+        await ctx.reply(embed=embed)
+
 
 @bot.event
 async def on_message(message):
