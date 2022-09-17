@@ -20,7 +20,6 @@ def get_all_db():
     """Return a json of the db
     """
     stud_json = json.dumps(random(), indent=2, sort_keys=True)
-    print(stud_json)
     return stud_json
 
 
@@ -37,7 +36,7 @@ class IncompleteTaskError(Error):
 def set_to_db(j_file):
     """Set a new observation to the db
     """
-    data = json.load(j_file)
+    data = json.loads(j_file)
     users_ref = ref.child("OverallDB")
 
     if "taskName" and "id" not in data:
@@ -52,9 +51,3 @@ def set_to_db(j_file):
         users_ref.set(json_object)
 
     users_ref.set(j_file)
-
-
-if __name__ == "db":
-    get_all_db()
-
-get_all_db()

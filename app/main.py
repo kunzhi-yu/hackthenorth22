@@ -5,13 +5,13 @@ from discord.ext import commands
 
 from _cohere.cohere_shit import *
 from _cohere.classification import *
-from db.db import *
+from app.db import *
 
 intents = discord.Intents().all()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=".", intents=intents)
-token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.G0MiZQ.at_n0wqmylvth33Uu8q8rRzBwf-hyBadinMRb4"
+token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.Gszrk8.SFfLNlTgviBOgxt6KQttYsvt-yIgCp-kvyNBMM"
 
 messages = []
 # wait_for checks
@@ -39,17 +39,14 @@ async def addtask(ctx, title):
     except asyncio.TimeoutError:
         deadline = ""
         await ctx.send("No deadline was added, deadline was set to none.")
-    try:
-        task = {
-            "Deadline": deadline,
-            "description": description,
-            "id": str(ctx.author.id),
-            "taskName": title
-        }
-        set_to_db(task)
-        await ctx.send("Task successfully added!")
-    except:
-        await ctx.send("Something went wrong.")
+    input = json.dumps({
+        "Deadline": deadline.content,
+        "description": description.content,
+        "id": str(ctx.author.id),
+        "taskName": title
+    })
+    set_to_db(input)
+    await ctx.send("Task successfully added!")
 
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
@@ -78,8 +75,11 @@ async def removetask(ctx, title):
 
 @bot.command(aliases=["all", "allt"])
 async def alltasks(ctx):
-    records = get_all_db()
-    print(records)
+    records = json.loads(get_all_db())
+    t = list(records.values())
+    tasks = [json.loads(i) for i in t]
+    relevant_tasks = [i for i in tasks if i["id"] == str(ctx.author.id)]
+    await ctx.send(relevant_tasks)
 
 @bot.event
 async def on_message(message):
@@ -88,10 +88,9 @@ async def on_message(message):
         # some shit
         messages.append(message)
 
-        if len(messages) > 2:
+        if len(messages) > 10:
             messages.pop(0)
-        if len(messages) == 2:
-
+        if len(messages) == 10:
             prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):
@@ -131,8 +130,7 @@ async def on_message(message):
                     except asyncio.TimeoutError:
                         await embed_msg.delete()
                         break
-            else:
-
-                await bot.process_commands(message)
+        else:
+            await bot.process_commands(message)
 
 bot.run(token)
