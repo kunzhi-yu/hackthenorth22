@@ -5,15 +5,14 @@ pd.set_option('display.max_colwidth', None)
 def gettasks():
     co = cohere.Client('M6me67HOZMMJsVSq2l0102rcX9Xxe2iwfi8cl0wt')
 
-    with open("prompt") as f:
+    with open("prompt.txt") as f:
         prompt = f.readline()
-    prompt = str(prompt).strip()
-    print(prompt)
+    # prompt = str(prompt).strip()
     response = co.generate(
         model='large',
-        prompt=prompt,
-        max_tokens=40,
-        temperature=0.8,
+        prompt='Find the best fitting task from the list of tasks from the following conversation.\n[12:14, 9/15/2021] Mishaal Kandapath: Good morning I need help with tasks.\n[12:17, 9/15/2021] Mishaal Kandapath: @Alex Yu take out the trash.\n[12:14, 9/15/2021] Alex Yu: Fine.\n[12:17, 9/15/2021] Mishaal Kandapath: Can @Alex Yu check the finance spreadsheet at the end of today?\n[12:19, 9/15/2021] Alex Yu: Sounds good! \nTo-Do: Take out the trash, Check the finance spreadsheet at the end of today.\n--\nFind the best fitting task from the list of tasks from the following conversation.\n2022-09-17, 11:00 - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Tap to learn more.\n2022-09-17, 11:00 - Alex Yu: Hi\n2022-09-17, 11:01 - Ricky Liu: How\'s it going\n2022-09-17, 11:02 - Alex Yu: it\'s going well! Can you please check the weather?\n2022-09-17, 11:02 - Ricky Liu: Yes.\n2022-09-17, 11:03 - Alex Yu: Thanks. Can you find the median in a datastream?\n2022-09-17, 11:05 - Ricky: Of course.\n2022-09-17, 11:03 - Alex Yu: Great work. Make sure to iron your clothes by tonight.\n2022-09-17, 11:05 - Ricky: Yessir.\nTo-Do: Check the weather, Find the median in a datastream, Iron clothes by tonight.\n--\nFind all the To-Do items for Alex Yu in the following conversation. \n2022-09-17, 11:00 - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Tap to learn more.\n2022-09-17, 11:00 - Alex Yu: Hi\n2022-09-17, 11:01 - Ricky Liu: How\'s it going\n2022-09-17, 11:02 - Alex Yu: it\'s going well! how\'s your piano going?\n2022-09-17, 11:02 - Ricky Liu: I recently took my last RCM exam! hbu?\n2022-09-17, 11:03 - Alex Yu: wow congrats!\n2022-09-17, 11:03 - Alex Yu: I want to practice 1 hour a day to improve\n2022-09-17, 11:04 - Ricky Liu: You got this!\n2022-09-17, 11:06 - Alex Yu: How has California been?\n2022-09-17, 11:06 - Ricky Liu: I\'m actually coming back in town soon.\n2022-09-17, 11:06 - Alex Yu: We should get lunch sometime when you come back.\n2022-09-17, 11:08 - Ricky Liu: YES we should. \nTo-Do:',
+        max_tokens=25,
+        temperature=0,
         k=1,
         p=1,
         frequency_penalty=0,
