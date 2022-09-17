@@ -6,14 +6,14 @@ co = cohere.Client('M6me67HOZMMJsVSq2l0102rcX9Xxe2iwfi8cl0wt')
 
 with open("prompt") as f:
     prompt = f.read()
-print(prompt)
+# print(prompt)
 
 response = co.generate(
     model='large',
-    prompt='',
-    max_tokens=20,
-    temperature=0.6,
-    k=0,
+    prompt= prompt,
+    max_tokens=30,
+    temperature=0.2,
+    k=1,
     p=1,
     frequency_penalty=0,
     presence_penalty=0,
