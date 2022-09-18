@@ -23,6 +23,8 @@ with b.get_connection("DeathByThermodynamics/hackthenorth2022") as conn:
         pass
 
 def get_data_by_id(userid):
+    """use this for backend
+    """
     sql = f"SELECT * FROM TASKS WHERE id = '{userid}';"
     cursor.execute(sql)
     return [{"id": i[0], "title": i[1], "description": i[2], "deadline": i[3]} for i in cursor.fetchall()]
