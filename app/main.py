@@ -1,11 +1,10 @@
 import asyncio
-import math
 
 import discord
 from discord.ext import commands
 
-from _cohere.cohere_shit import *
 from _cohere.classification import *
+from _cohere.cohere_shit import *
 from app.db import *
 
 intents = discord.Intents().all()
@@ -16,15 +15,20 @@ with open("token") as f:
 bot = commands.Bot(command_prefix=".", intents=intents)
 embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020919160953393213/unknown.png"
 messages = []
+
+
 # wait_for checks
 def is_same_author(author):
     def inner(message):
         return message.author.id == author.id
+
     return inner
+
 
 @bot.event
 async def on_ready():
     print("I'm alive")
+
 
 @bot.command(aliases=["at", "add"])
 async def addtask(ctx, title):
@@ -50,23 +54,23 @@ async def addtask(ctx, title):
     embed = discord.Embed(title="Task successfully added!", colour=discord.Color.green())
     await ctx.send(embed=embed)
 
+
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
     # query db and remove task
     task = delete_entry(title)
-# should be the contents of the query
+    # should be the contents of the query
     embed = discord.Embed(title=f"You are about to remove {task['title']}", description=task['description'])
     embed.set_thumbnail(url=embed_picture)
     if task['deadline'] != 0:
         embed.add_field(name="Deadline", value=task['deadline'], inline=False)
-    #embed.set_thumbnail(url="deeznuts")
     embed_msg = await ctx.message.reply(embed=embed)
-    # can be buttons, rather should be buttons
     await embed_msg.add_reaction("❌")
     await embed_msg.add_reaction("✅")
     try:
         def check(reaction, user):
             return user != bot.user and str(reaction) in ["❌", "✅"]
+
         r = await bot.wait_for("reaction_add", check=check, timeout=60)
         if str(r[0].emoji) == "❌":
             await embed_msg.edit(content="Cancelled")
@@ -77,6 +81,7 @@ async def removetask(ctx, title):
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
+
 
 @bot.command(aliases=["all", "allt"])
 async def alltasks(ctx):
@@ -95,6 +100,7 @@ async def alltasks(ctx):
         try:
             def check(reaction, user):
                 return user != bot.user and str(reaction) in ["⬅️", "➡️"]
+
             r = await bot.wait_for("reaction_add", check=check, timeout=60)
             if str(r[0].emoji) == "⬅️":
                 index = max(0, index - 1)
@@ -112,9 +118,7 @@ async def alltasks(ctx):
 
 @bot.event
 async def on_message(message):
-
     if (message.author.id != bot.user.id):
-        # some shit
         messages.append(message)
 
         if len(messages) > 10:
@@ -151,28 +155,20 @@ async def on_message(message):
                             write({
                                 "id": str(member.id),
                                 "title": f"{goodtasks[0]}",
-                                "description": "",
-                                "deadline": ""
+                                "description": "None",
+                                "deadline": "None"
                             })
-
-
                             confirmed_embed = discord.Embed(title="Confirmed",
                                                             description=f"{embed.title}\n{', '.join(goodtasks)}",
                                                             colour=discord.Color.green())
                             embed.set_thumbnail(url=embed_picture)
                             confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
-
-
-
-
                             await embed_msg.edit(embed=confirmed_embed)
-                            user_id = member.id
-                            task = f"{', '.join(goodtasks)}"
-                            # Send this selection to the database
                     except asyncio.TimeoutError:
                         await embed_msg.delete()
                         break
         else:
             await bot.process_commands(message)
+
 
 bot.run(token)
