@@ -80,7 +80,7 @@ async def removetask(ctx, title):
 async def alltasks(ctx):
     records = get_all_db()
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
-    chuncked_tasks = [relevant_tasks[i:i + 10] for i in xrange(0, len(relevant_tasks), 5)]
+    chunked_tasks = [relevant_tasks[i:i + 10] for i in range(0, len(relevant_tasks), 5)]
 
     embed = discord.Embed(title="Tasks", description="All tasks")
     index = 0
@@ -95,9 +95,9 @@ async def alltasks(ctx):
                 return user != bot.user and str(reaction) in ["⬅️", "➡️"]
             r = await bot.wait_for("reaction_add", check=check, timeout=60)
             if str(r[0].emoji) == "⬅️":
-                index = math.max(0, index - 1)
+                index = max(0, index - 1)
             elif str(r[0].emoji) == "➡️":
-                index = math.min(index + 1, len(chuncked_tasks))
+                index = min(index + 1, len(chunked_tasks))
             edit_embed = discord.Embed(title="Tasks", description="All tasks")
             for task in chunked_tasks[index]:
                 edit_embed.add_field(name=task["title"], value=task["description"], inline=False)
