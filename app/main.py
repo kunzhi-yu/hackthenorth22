@@ -40,23 +40,22 @@ async def addtask(ctx, title):
     except asyncio.TimeoutError:
         deadline = ""
         await ctx.send("No deadline was added, deadline was set to none.")
-    input = json.dumps({
-        "Deadline": deadline.content,
-        "description": description.content,
+    write({
         "id": str(ctx.author.id),
-        "taskName": title
+        "title": title,
+        "description": description.content,
+        "deadline": deadline.content
     })
-    set_to_db(input)
     await ctx.send("Task successfully added!")
 
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
     # query db and remove task
-    task = json.loads(remove_entry(title))
+    task = delete_entry(title)
 # should be the contents of the query
-    embed = discord.Embed(title=f"You are about to remove {task['taskName']}", description=task['description'])
-    if task['Deadline'] != 0:
-        embed.add_field(name="Deadline", value=task['Deadline'], inline=False)
+    embed = discord.Embed(title=f"You are about to remove {task['title']}", description=task['description'])
+    if task['deadline'] != 0:
+        embed.add_field(name="Deadline", value=task['deadline'], inline=False)
     #embed.set_thumbnail(url="deeznuts")
     embed_msg = await ctx.message.reply(embed=embed)
     # can be buttons, rather should be buttons
@@ -64,29 +63,26 @@ async def removetask(ctx, title):
     await embed_msg.add_reaction("✅")
     try:
         def check(reaction, user):
-            return user in reaction.users
-        r = await bot.wait_for("reaction", check=check, timeout=60)
+            return user != bot.user and str(reaction) in ["❌", "✅"]
+        r = await bot.wait_for("reaction_add", check=check, timeout=60)
         if str(r[0].emoji) == "❌":
             await embed_msg.edit(content="Cancelled")
             return
         elif str(r[0].emoji) == "✅":
-            remove_entry2(task)
+            print("here")
+            remove_entry2(title)
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
 
 @bot.command(aliases=["all", "allt"])
 async def alltasks(ctx):
-    records = json.loads(get_all_db())
-    if isinstance(records, str):
-        records = {"0": records}
-    t = list(records.values())
-    tasks = [json.loads(i) for i in t]
-    relevant_tasks = [i for i in tasks if i["id"] == str(ctx.author.id)]
+    records = get_all_db()
+    relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
     for i in relevant_tasks:
-        embed = discord.Embed(title=i["taskName"], description=i["description"])
-        if i["Deadline"]:
-            embed.add_field(name="Deadline", value=i["Deadline"], inline=False)
+        embed = discord.Embed(title=i["title"], description=i["description"])
+        if i["deadline"]:
+            embed.add_field(name="Deadline", value=i["deadline"], inline=False)
         await ctx.reply(embed=embed)
 
 

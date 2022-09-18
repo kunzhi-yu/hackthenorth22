@@ -1,78 +1,65 @@
 import json
-import firebase_admin
-from firebase_admin import db, firestore
+import bitdotio
 
-cred_obj = firebase_admin.credentials.Certificate('toilet-1c321-firebase-adminsdk-iojrg-a2d280fac3.json')
-default_app = firebase_admin.initialize_app(cred_obj, {
-    'databaseURL': "https://toilet-1c321-default-rtdb.firebaseio.com/"
-})
+with open("key") as f:
+    key = f.readline()
+b = bitdotio.bitdotio(key)
 
-ref = db.reference("/OverallDB/")
-
-# API call to get all the data in a list
-def random():
-    """Get all data from the db
+# Create table, if it does not already exist
+create_table_sql = """
+    CREATE TABLE TASKS (
+      id text,
+      title text,
+      description text,
+      deadline text
+    )
     """
-    return ref.get()
+
+with b.get_connection("DeathByThermodynamics/hackthenorth2022") as conn:
+    cursor = conn.cursor()
+    try:
+        cursor.execute(create_table_sql)
+    except:
+        pass
+
+def get_data_by_id(userid):
+    sql = f"SELECT * FROM TASKS WHERE id = '{userid}';"
+    cursor.execute(sql)
+    return [{"id": i[0], "title": i[1], "description": i[2], "deadline": i[3]} for i in cursor.fetchall()]
 
 
 def get_all_db():
     """Return a json of the db
     """
-    stud_json = json.dumps(random(), indent=2, sort_keys=True)
-    return stud_json
+    sql = f"SELECT * FROM TASKS ORDER BY id;"
+    cursor.execute(sql)
+    return [{"id": i[0], "title": i[1], "description": i[2],"deadline": i[3]} for i in cursor.fetchall()]
 
 
-# define Python user-defined exceptions
-class Error(Exception):
-    """Base class for other exceptions"""
-    pass
-
-
-class IncompleteTaskError(Error):
-    """Raised when there is no description in the task"""
-
-
-def set_to_db(j_file):
+def write(input_dict):
     """Set a new observation to the db
     """
-    data = json.loads(j_file)
+    sql = """INSERT INTO TASKS (id, title, description, deadline)
+             VALUES(%s, %s, %s, %s);"""
+    records = list(input_dict.values())
+    cursor.execute(sql, records)
+    conn.commit()
 
+def query_entry(title):
+    sql = f"SELECT * FROM TASKS WHERE title = '{title}';"
+    cursor.execute(sql)
+    conn.commit()
+    c = cursor.fetchone()
+    return {
+        "id": c[0],
+        "title": c[1],
+        "description": c[2],
+        "deadline": c[3]
+    }
 
-
-    if "taskName" and "id" not in data:
-        raise IncompleteTaskError
-    elif "Deadline" not in data:
-        data["Deadline"] = ""
-        json_object = json.dumps(data, indent=2, sort_keys=True)
-        ref.set(json_object)
-    elif "description" not in data:
-        data["description"] = ""
-        json_object = json.dumps(data, indent=2, sort_keys=True)
-        ref.set(json_object)
-
-    ref.push(j_file)
-
-def remove_entry(title):
-    records = json.loads(get_all_db())
-    if isinstance(records, str):
-        records = {"0": records}
-    t = list(records.values())
-    for i in t:
-        if json.loads(i)["taskName"] == title:
-            return i
-def remove_entry2(j_file):
+def delete_entry(title):
     """Remove an entry from the database.
     """
-    records = json.loads(get_all_db())
-    if isinstance(records, str):
-        records = {"0": records}
-    t = list(records.values())
-    accumulator = 0
-    for i in t:
-        if json.loads(i)["taskName"] == j_file:
-            if accumulator == 0:
-                ref.set(i)
-                accumulator += 1
-            else:
-                ref.push(i)
+    sql = f"DELETE FROM TASKS WHERE title = '{title}';"
+    cursor.execute(sql)
+    conn.commit()
