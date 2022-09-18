@@ -1,27 +1,21 @@
-from pyexpat.errors import messages
-from re import S
+import warnings
+
 import cohere
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from datasets import load_dataset
-import altair as alt
-from sklearn.metrics.pairwise import cosine_similarity
 from annoy import AnnoyIndex
-import warnings
+from datasets import load_dataset
 
-import messages_text_clustering
-import discord
 import app.db as db
+from _cohere import messages_text_clustering
 
+api_key = "I0oJB6ppm4jX1nlgQwKPYuZjVZJieG4vXENOTmk9"
 
 def task_ranking_job(messages, tasks):
-
     warnings.filterwarnings('ignore')
     pd.set_option('display.max_colwidth', None)
 
     # Paste your API key here. Remember to not share publicly
-    api_key = '4yQMOFTGZqEw93HLfQ735fQQn67vhSkylhCkNTx9' #Alex's money, use as much as u want
     # Create and retrieve a Cohere API key from os.cohere.ai
     co = cohere.Client(api_key)
 
@@ -66,16 +60,17 @@ def task_ranking_job(messages, tasks):
                                     'distance': similar_item_ids[1]})
 
 
-        print(f"Query:'{query}'\nNearest neighbors:")
+        # print(f"Query:'{query}'\nNearest neighbors:")
 
-        print(list(results["texts"]), list(results["distance"]))
+        #print(list(results["texts"]), list(results["distance"]))
         chat_topics[query] = list(results["texts"])#list(zip(results["texts"], results["distance"]))
 
-    # now taking in the database of tasks and stufF:
-    
-    lines = [task_tup[0] + " \n" + task_tup[1] for task_tup in tasks]
+    # now taking in the database of tasks and stuff:
+    lines = [f"{i[0]}\n{i[1]}" for i in tasks]
+    print(lines)
     topic_rankings = []
     for topic in lines:
+        #print("                                                              ")
         query_embed = co.embed(texts=[topic],
                     model="large",
                     truncate="LEFT").embeddings
@@ -88,40 +83,40 @@ def task_ranking_job(messages, tasks):
                                     'distance': similar_item_ids[1]})
 
 
-        print(f"Query:'{topic}'\nNearest neighbors:")
+        #print(f"Query:'{topic}'\nNearest neighbors:")
 
-        print(list(results["texts"]), list(results["distance"]))
+        #print(list(results["texts"]), list(results["distance"]))
         rando_list = []
         for idx, text in enumerate(results["texts"]): # list of all sentences tasks were mapped to in order of distance too
             overall_score = 0
             for chat_topic in chat_topics:
                 texts = chat_topics[chat_topic] # the list of all sentences the chat topic groups were mapped to in order of distance
                 try:
-                    print("OII", texts)
+                    #print("OII", texts)
                     otherindex = texts.index(text)
                 except:
                     otherindex = 10
-                print(abs(idx - otherindex), idx, otherindex)
+                #print(abs(idx - otherindex), idx, otherindex)
                 overall_score -= abs(idx - otherindex)
             rando_list += [(overall_score + len(set.intersection(set(results["texts"]), set(texts))), text)]
-            print("RANDO ", rando_list)
+            #print("RANDO ", rando_list)
         topic_rankings += [(max(rando_list)[0], topic)] # the maxiumum score this todo topic has
-        print("MAIN", topic_rankings)
+        #print("MAIN", topic_rankings)
 
     final_rankings = [tup[1] for tup in sorted(topic_rankings, key=lambda x: x[0])]
-    final_rankings = [string.split("\n")[0] for string in final_rankings]
-    return final_rankings
+    return [string.split("\n")[0] for string in final_rankings]
 
-def main_sent_extract(messages_list):
-    all_messages = [message.content for message in messages_list]
-    ids = [message.id for message in messages_list] 
+def main_sent_extract(all_messages, ids):
     id_to_tasks = {}
-    for id_ in ids:
-        tasks = db.get_data_by_id(id_)
-        tasks = [(task["title"], task["desc"]) for task in tasks]
-        ranked_tasks = task_ranking_job(all_messages, tasks)
-        id_to_tasks[id_] = ranked_tasks
+    records = db.get_all_db()
+    ids = [i["id"] for i in records]
+    for i in list(set(ids)):
+        if i in ids:
+            tasks = [[k['title'], k['description']] for k in records if k["id"].strip("\n").strip() == i]
+            ranked_tasks = task_ranking_job(all_messages, tasks)
+            id_to_tasks[i] = list(set(ranked_tasks))
     return id_to_tasks
+
 
 
 

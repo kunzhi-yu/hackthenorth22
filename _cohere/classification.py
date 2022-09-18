@@ -31,7 +31,7 @@ def classifyPrediction(tasks):
                   Example("Attend party at Liam\'s house on Sunday", "Task"),
                   Example("Hi Alex, the fridge needs to be cleaned", "Task"),
                   Example("Get me this paper done by tomorrow.", "Task")])
-    print(response)
+    #print(response)
 
     goodtasks = []
     length = len(response.classifications)
@@ -89,7 +89,7 @@ def classifyPredictionSpam(tasks):
     for i in range(length):
         try:
             task = response.classifications[i].input
-            print(response.classifications[i])
+            #print(response.classifications[i])
             values = [k.confidence for k in response.classifications[i].confidence]
             max_val = max([k.confidence for k in response.classifications[i].confidence])
             category = response.classifications[i].confidence[values.index(max_val)].label

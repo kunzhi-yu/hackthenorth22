@@ -1,1 +1,14 @@
 git+https://github.com/Rapptz/discord.py
+
+bitdotio~=1.1.0b1
+discord~=2.0.0
+cohere~=2.4.0
+pandas~=1.2.5
+numpy~=1.19.5
+matplotlib~=3.5.2
+kneed~=0.8.1
+gensim~=4.2.0
+scikit-learn~=1.1.2
+tqdm~=4.64.1
+datasets~=2.4.0
+annoy~=1.17.1

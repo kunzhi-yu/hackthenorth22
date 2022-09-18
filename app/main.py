@@ -2,6 +2,7 @@ import asyncio
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import CommandNotFound
 
 from _cohere.classification import *
 from _cohere.cohere_shit import *
@@ -10,11 +11,13 @@ from app.db import *
 intents = discord.Intents().all()
 intents.message_content = True
 
-
-token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.G1CHRB.rj3J4APTeY04ZplxxK8M1xoXYKO0Tx9loVZx4c"
+with open("token") as f:
+    token = f.readline()
 bot = commands.Bot(command_prefix=".", intents=intents)
 embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020919160953393213/unknown.png"
 messages = []
+
+showcasedictionary = {}
 
 
 # wait_for checks
@@ -29,21 +32,27 @@ def is_same_author(author):
 async def on_ready():
     print("I'm alive")
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        return
+    raise error
 
 @bot.command(aliases=["at", "add"])
-async def addtask(ctx, title):
+async def addtask(ctx, *args):
+    title = " ".join(args)
     reply = await ctx.reply("Please input a description (optional)")
     try:
         description = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
         await description.reply("Please input a deadline (optional)")
     except asyncio.TimeoutError:
-        description = ""
+        description = "None"
         await reply.edit(content="No description was added, description was set to none.")
     try:
         deadline = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
         pass
     except asyncio.TimeoutError:
-        deadline = ""
+        deadline = "None"
         await ctx.send("No deadline was added, deadline was set to none.")
     write({
         "id": str(ctx.author.id),
@@ -161,12 +170,12 @@ async def alltasks(ctx):
 
 @bot.event
 async def on_message(message):
-    if (message.author.id != bot.user.id) and not (message.content.startswith(".")):
-        messages.append(message)
+    if (message.author.id != bot.user.id):
+        if not (message.content.startswith(".")):
+            messages.append(message)
         if len(messages) > 5:
             messages.pop(0)
         if len(messages) == 5:
-            channel = bot.get_channel(1020748712173109392)
             prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):

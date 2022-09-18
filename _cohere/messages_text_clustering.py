@@ -10,8 +10,7 @@ import kneed
 
 
 def process_chat(all_string):
-    # lines = all_string.split("\n")
-    lines = [line.split(" ") for line in lines]
+    lines = [line.split(" ") for line in all_string]
     # got a list of all lines, with words in them seperated too:
     m = Word2Vec(sentences=lines, vector_size=50, min_count=1, sg=1)
     l = []
@@ -31,7 +30,7 @@ def process_chat(all_string):
 
     kneedle = kneed.KneeLocator(x=range(2, 50), y=wcss, curve="convex", direction="decreasing", online=True, S=1)
     knee_point = kneedle.elbow
-    print(knee_point)
+    #print(knee_point)
 
     main_model = models[knee_point - 2]
     labels = main_model.fit_predict(X)
