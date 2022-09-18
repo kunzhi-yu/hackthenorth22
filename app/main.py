@@ -68,7 +68,7 @@ async def addtask(ctx, *args):
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
     # query db and remove task
-    task = delete_entry(title)
+    task = query_entry(title)
     # should be the contents of the query
     embed = discord.Embed(title=f"You are about to remove {task['title']}", description=task['description'])
     embed.set_thumbnail(url=embed_picture)
@@ -99,7 +99,7 @@ async def removetask(ctx, title):
 @bot.command(aliases=["c"])
 async def complete(ctx, title):
     # query db and remove task
-    task = delete_entry(title)
+    task = query_entry(title)
     # should be the contents of the query
     embed = discord.Embed(title=f"You are about to mark {task['title']} as complete", description=task['description'])
     embed.set_thumbnail(url=embed_picture)
@@ -173,53 +173,53 @@ async def on_message(message):
     if (message.author.id != bot.user.id):
         if not (message.content.startswith(".")):
             messages.append(message)
-        if len(messages) > 5:
-            messages.pop(0)
-        if len(messages) == 5:
-            prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
-            tasks = gettasks(prompt, bot.get_user(message.author.id).name)
-            for i in range(len(tasks)):
-                tasks[i] = tasks[i].strip("\\n")
-            goodtasks = classifyPredictionSpam(tasks)
-            if len(goodtasks) != 0:
-                messages.clear()
-                embed = discord.Embed(title="Tasks", description=goodtasks[0])
-                embed.set_thumbnail(url=embed_picture)
-                embed.set_footer(text="Do you want to add tasks?")
-                embed_msg = await message.reply(embed=embed)
-                await embed_msg.add_reaction("❌")
-                await embed_msg.add_reaction("✅")
-                dm_embed = discord.Embed(title="Confirmed!",
-                                         description=f"{goodtasks[0]}",
-                                         colour=discord.Color.green())
-                dm_embed.set_thumbnail(url=embed_picture)
-                while True:
-                    try:
-                        def check(reaction, user):
-                            return user != bot.user and str(reaction) in ["❌", "✅"]
+            if len(messages) > 5:
+                messages.pop(0)
+            if len(messages) == 5:
+                prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
+                tasks = gettasks(prompt, bot.get_user(message.author.id).name)
+                for i in range(len(tasks)):
+                    tasks[i] = tasks[i].strip("\\n")
+                goodtasks = classifyPredictionSpam(tasks)
+                if len(goodtasks) != 0:
+                    messages.clear()
+                    embed = discord.Embed(title="Tasks", description=goodtasks[0])
+                    embed.set_thumbnail(url=embed_picture)
+                    embed.set_footer(text="Do you want to add tasks?")
+                    embed_msg = await message.reply(embed=embed)
+                    await embed_msg.add_reaction("❌")
+                    await embed_msg.add_reaction("✅")
+                    dm_embed = discord.Embed(title="Confirmed!",
+                                             description=f"{goodtasks[0]}",
+                                             colour=discord.Color.green())
+                    dm_embed.set_thumbnail(url=embed_picture)
+                    while True:
+                        try:
+                            def check(reaction, user):
+                                return user != bot.user and str(reaction) in ["❌", "✅"]
 
-                        r = await bot.wait_for("reaction_add", check=check, timeout=90)
-                        if str(r[0].emoji) == "❌":
+                            r = await bot.wait_for("reaction_add", check=check, timeout=90)
+                            if str(r[0].emoji) == "❌":
+                                await embed_msg.delete()
+                                return
+                            elif str(r[0].emoji) == "✅":
+                                member = r[1]
+                                await member.send(embed=dm_embed)
+                                write({
+                                    "id": str(member.id),
+                                    "title": f"{goodtasks[0]}",
+                                    "description": "None",
+                                    "deadline": "None"
+                                })
+                                confirmed_embed = discord.Embed(title="Confirmed",
+                                                                description=f"{embed.title}\n{', '.join(goodtasks)}",
+                                                                colour=discord.Color.green())
+                                embed.set_thumbnail(url=embed_picture)
+                                confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
+                                await embed_msg.edit(embed=confirmed_embed)
+                        except asyncio.TimeoutError:
                             await embed_msg.delete()
-                            return
-                        elif str(r[0].emoji) == "✅":
-                            member = r[1]
-                            await member.send(embed=dm_embed)
-                            write({
-                                "id": str(member.id),
-                                "title": f"{goodtasks[0]}",
-                                "description": "None",
-                                "deadline": "None"
-                            })
-                            confirmed_embed = discord.Embed(title="Confirmed",
-                                                            description=f"{embed.title}\n{', '.join(goodtasks)}",
-                                                            colour=discord.Color.green())
-                            embed.set_thumbnail(url=embed_picture)
-                            confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
-                            await embed_msg.edit(embed=confirmed_embed)
-                    except asyncio.TimeoutError:
-                        await embed_msg.delete()
-                        break
+                            break
         else:
             await bot.process_commands(message)
 
