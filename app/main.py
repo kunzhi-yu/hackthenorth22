@@ -94,11 +94,12 @@ async def alltasks(ctx):
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
     chunked_tasks = [relevant_tasks[i:i + 10] for i in range(0, len(relevant_tasks), 5)]
 
-    embed = discord.Embed(title="Tasks", description="All tasks")
-    embed.set_thumbnail(url=embed_picture)
     index = 0
+    desc = ""
     for task in chunked_tasks[index]:
-        embed.add_field(name=task["title"], value=task["description"], inline=False)
+        desc += f"{task['title']} - {task['description']}\n"
+    embed = discord.Embed(title="Tasks", description=f"All tasks\n```js\n{desc}```")
+    embed.set_thumbnail(url=embed_picture)
     msg_embed = await ctx.reply(embed=embed)
     await msg_embed.add_reaction("⬅️")
     await msg_embed.add_reaction("➡️")
