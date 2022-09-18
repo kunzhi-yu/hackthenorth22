@@ -94,7 +94,7 @@ def classifyPredictionSpam(tasks):
             max_val = max([k.confidence for k in response.classifications[i].confidence])
             category = response.classifications[i].confidence[values.index(max_val)].label
             #print(category)
-            if category == "Tasks":
+            if category == "Tasks" and max_val > 0.5:
 
                 goodtasks.append(task)
         except IndexError:

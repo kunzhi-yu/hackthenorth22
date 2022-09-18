@@ -10,8 +10,8 @@ from app.db import *
 intents = discord.Intents().all()
 intents.message_content = True
 
-with open("token") as f:
-    token = f.readline()
+
+token = "MTAyMDc0ODM0MDcwODc3ODA5NQ.G1CHRB.rj3J4APTeY04ZplxxK8M1xoXYKO0Tx9loVZx4c"
 bot = commands.Bot(command_prefix=".", intents=intents)
 embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020919160953393213/unknown.png"
 messages = []
@@ -161,7 +161,7 @@ async def alltasks(ctx):
 
 @bot.event
 async def on_message(message):
-    if (message.author.id != bot.user.id):
+    if (message.author.id != bot.user.id) and not (message.content.startswith(".")):
         messages.append(message)
         if len(messages) > 5:
             messages.pop(0)

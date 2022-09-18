@@ -1,8 +1,7 @@
 import json
 import bitdotio
 
-with open("key") as f:
-    key = f.readline()
+key = "v2_3uBfM_4GadEWzKVeJPYawbATUWrDN"
 b = bitdotio.bitdotio(key)
 
 # Create table, if it does not already exist
