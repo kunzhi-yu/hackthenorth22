@@ -13,7 +13,7 @@ intents.message_content = True
 with open("token") as f:
     token = f.readline()
 bot = commands.Bot(command_prefix=".", intents=intents)
-embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020853072559353856/unknown.png"
+embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020919160953393213/unknown.png"
 messages = []
 # wait_for checks
 def is_same_author(author):
@@ -46,7 +46,8 @@ async def addtask(ctx, title):
         "description": description.content,
         "deadline": deadline.content
     })
-    await ctx.send("Task successfully added!")
+    embed = discord.Embed(title="Task successfully added!", colour=discord.Color.green())
+    await ctx.send(embed=embed)
 
 @bot.command(aliases=["rt", "remove"])
 async def removetask(ctx, title):
