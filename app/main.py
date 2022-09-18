@@ -87,12 +87,44 @@ async def removetask(ctx, title):
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
 
+@bot.command(aliases=["c"])
+async def complete(ctx, title):
+    # query db and remove task
+    task = delete_entry(title)
+    # should be the contents of the query
+    embed = discord.Embed(title=f"You are about to mark {task['title']} as complete", description=task['description'])
+    embed.set_thumbnail(url=embed_picture)
+    if task['deadline'] != 0:
+        embed.add_field(name="Deadline", value=task['deadline'], inline=False)
+    embed_msg = await ctx.message.reply(embed=embed)
+    await embed_msg.add_reaction("❌")
+    await embed_msg.add_reaction("✅")
+    try:
+        def check(reaction, user):
+            return user != bot.user and str(reaction) in ["❌", "✅"]
+
+        r = await bot.wait_for("reaction_add", check=check, timeout=60)
+        if str(r[0].emoji) == "❌":
+            edit_embed = discord.Embed(title="Cancelled", color=discord.Color.red())
+            edit_embed.set_thumbnail(url=embed_picture)
+            await embed_msg.edit(embed=edit_embed)
+            return
+        elif str(r[0].emoji) == "✅":
+            delete_entry(title)
+            edit_embed = discord.Embed(title="Successfully completed task", color=discord.Color.green())
+            edit_embed.set_thumbnail(url=embed_picture)
+            await embed_msg.edit(embed=edit_embed)
+            return
+    except asyncio.TimeoutError:
+        await embed_msg.edit(content="Took too long, cancelled")
 
 @bot.command(aliases=["all", "allt"])
 async def alltasks(ctx):
     records = get_all_db()
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
-    chunked_tasks = [relevant_tasks[i:i + 10] for i in range(0, len(relevant_tasks), 5)]
+    if not relevant_tasks:
+        await ctx.reply("No tasks")
+    chunked_tasks = [relevant_tasks[i:i + 5] for i in range(0, len(relevant_tasks), 5)]
 
     index = 0
     desc = ""
@@ -115,7 +147,8 @@ async def alltasks(ctx):
                 index = min(index + 1, len(chunked_tasks))
 
             desc = ""
-            for task in chunked_tasks[index]:
+            it = sorted(chunked_tasks[index], key=lambda x: len(x['title']))
+            for task in it:
                 desc += f"{task['title']} - {task['description']}\n"
             edit_embed = discord.Embed(title="Tasks", description=f"All tasks\n```js\n{desc}```")
             edit_embed.set_thumbnail(url=embed_picture)
@@ -130,10 +163,11 @@ async def alltasks(ctx):
 async def on_message(message):
     if (message.author.id != bot.user.id):
         limit = 10
+        messages.append(message)
         if len(messages) > limit - 1:
             messages.pop(0)
         if len(messages) == limit:
-            messages.append(message)
+
             prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):
