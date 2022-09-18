@@ -52,6 +52,7 @@ async def addtask(ctx, title):
         "deadline": deadline.content
     })
     embed = discord.Embed(title="Task successfully added!", colour=discord.Color.green())
+    embed.set_thumbnail(url=embed_picture)
     await ctx.send(embed=embed)
 
 
@@ -73,11 +74,15 @@ async def removetask(ctx, title):
 
         r = await bot.wait_for("reaction_add", check=check, timeout=60)
         if str(r[0].emoji) == "❌":
-            await embed_msg.edit(content="Cancelled")
+            edit_embed = discord.Embed(title="Cancelled", color=discord.Color.red())
+            edit_embed.set_thumbnail(url=embed_picture)
+            await embed_msg.edit(embed=edit_embed)
             return
         elif str(r[0].emoji) == "✅":
-            print("here")
             delete_entry(title)
+            edit_embed = discord.Embed(title="Successfully deleted task", color=discord.Color.green())
+            edit_embed.set_thumbnail(url=embed_picture)
+            await embed_msg.edit(embed=edit_embed)
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
@@ -90,6 +95,7 @@ async def alltasks(ctx):
     chunked_tasks = [relevant_tasks[i:i + 10] for i in range(0, len(relevant_tasks), 5)]
 
     embed = discord.Embed(title="Tasks", description="All tasks")
+    embed.set_thumbnail(url=embed_picture)
     index = 0
     for task in chunked_tasks[index]:
         embed.add_field(name=task["title"], value=task["description"], inline=False)
@@ -106,9 +112,12 @@ async def alltasks(ctx):
                 index = max(0, index - 1)
             elif str(r[0].emoji) == "➡️":
                 index = min(index + 1, len(chunked_tasks))
-            edit_embed = discord.Embed(title="Tasks", description="All tasks")
+
+            desc = ""
             for task in chunked_tasks[index]:
-                edit_embed.add_field(name=task["title"], value=task["description"], inline=False)
+                desc += f"{task['title']} - {task['description']}\n"
+            edit_embed = discord.Embed(title="Tasks", description=f"All tasks\n```js\n{desc}```")
+            edit_embed.set_thumbnail(url=embed_picture)
             await msg_embed.edit(embed=edit_embed)
         except asyncio.TimeoutError:
             return
@@ -140,6 +149,7 @@ async def on_message(message):
                 dm_embed = discord.Embed(title="Confirmed!",
                                          description=f"{goodtasks[0]}",
                                          colour=discord.Color.green())
+                dm_embed.set_thumbnail(url=embed_picture)
                 while True:
                     try:
                         def check(reaction, user):
