@@ -43,22 +43,31 @@ async def addtask(ctx, *args):
     title = " ".join(args)
     reply = await ctx.reply("Please input a description (optional)")
     try:
-        description = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
-        await description.reply("Please input a deadline (optional)")
+        d = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
+        description = d.content
+        try:
+            messages.remove(description)
+        except:
+            pass
+        await d.reply("Please input a deadline (optional)")
     except asyncio.TimeoutError:
         description = "None"
         await reply.edit(content="No description was added, description was set to none.")
     try:
-        deadline = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
-        pass
+        dl = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
+        deadline = dl.content
+        try:
+            messages.remove(deadline)
+        except:
+            pass
     except asyncio.TimeoutError:
         deadline = "None"
         await ctx.send("No deadline was added, deadline was set to none.")
     write({
         "id": str(ctx.author.id),
         "title": title,
-        "description": description.content,
-        "deadline": deadline.content
+        "description": description,
+        "deadline": deadline
     })
     embed = discord.Embed(title="Task successfully added!", colour=discord.Color.green())
     embed.set_thumbnail(url=embed_picture)
@@ -170,6 +179,7 @@ async def alltasks(ctx):
 
 @bot.event
 async def on_message(message):
+    global messages
     if (message.author.id != bot.user.id):
         if not (message.content.startswith(".")):
             messages.append(message)
