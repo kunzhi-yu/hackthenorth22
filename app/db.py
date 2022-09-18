@@ -66,6 +66,12 @@ def delete_entry(title):
     cursor.execute(sql)
     conn.commit()
 
+def query_user(id):
+    sql = f"SELECT * FROM TASKS WHERE id = '{id}';"
+    cursor.execute(sql)
+    conn.commit()
+    return [{"id": i[0], "title": i[1], "description": i[2], "deadline": i[3]} for i in cursor.fetchall()]
+
 def user_query_entry(id, title):
     sql = f"SELECT * FROM TASKS WHERE id = '{id}' AND title = '{title}';"
     cursor.execute(sql)
