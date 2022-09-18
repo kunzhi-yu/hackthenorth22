@@ -80,12 +80,32 @@ async def removetask(ctx, title):
 async def alltasks(ctx):
     records = get_all_db()
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
-    for i in relevant_tasks:
-        embed = discord.Embed(title=i["title"], description=i["description"])
-        embed.set_thumbnail(url=embed_picture)
-        if i["deadline"]:
-            embed.add_field(name="Deadline", value=i["deadline"], inline=False)
-        await ctx.reply(embed=embed)
+    chuncked_tasks = [relevant_tasks[i:i + 10] for i in xrange(0, len(relevant_tasks), 5)]
+
+    embed = discord.Embed(title="Tasks", description="All tasks")
+    index = 0
+    for task in chunked_tasks[index]:
+        embed.add_field(name=task["title"], value=task["description"], inline=False)
+    msg_embed = await ctx.reply(embed=embed)
+    await msg_embed.add_reaction("⬅️")
+    await msg_embed.add_reaction("➡️")
+    while True:
+        try:
+            def check(reaction, user):
+                return user != bot.user and str(reaction) in ["⬅️", "➡️"]
+            r = await bot.wait_for("reaction_add", check=check, timeout=60)
+            if str(r[0].emoji) == "⬅️":
+                index = math.max(0, index - 1)
+            elif str(r[0].emoji) == "➡️":
+                index = math.min(index + 1, len(chuncked_tasks))
+            edit_embed = discord.Embed(title="Tasks", description="All tasks")
+            for task in chunked_tasks[index]:
+                edit_embed.add_field(name=task["title"], value=task["description"], inline=False)
+            await msg_embed.edit(embed=edit_embed)
+        except asyncio.TimeoutError:
+            return
+        except:
+            pass
 
 
 @bot.event
