@@ -13,7 +13,7 @@ intents.message_content = True
 with open("token") as f:
     token = f.readline()
 bot = commands.Bot(command_prefix=".", intents=intents)
-
+embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020853072559353856/unknown.png"
 messages = []
 # wait_for checks
 def is_same_author(author):
@@ -54,6 +54,7 @@ async def removetask(ctx, title):
     task = delete_entry(title)
 # should be the contents of the query
     embed = discord.Embed(title=f"You are about to remove {task['title']}", description=task['description'])
+    embed.set_thumbnail(url=embed_picture)
     if task['deadline'] != 0:
         embed.add_field(name="Deadline", value=task['deadline'], inline=False)
     #embed.set_thumbnail(url="deeznuts")
@@ -70,7 +71,7 @@ async def removetask(ctx, title):
             return
         elif str(r[0].emoji) == "✅":
             print("here")
-            remove_entry2(title)
+            delete_entry(title)
             return
     except asyncio.TimeoutError:
         await embed_msg.edit(content="Took too long, cancelled")
@@ -81,6 +82,7 @@ async def alltasks(ctx):
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
     for i in relevant_tasks:
         embed = discord.Embed(title=i["title"], description=i["description"])
+        embed.set_thumbnail(url=embed_picture)
         if i["deadline"]:
             embed.add_field(name="Deadline", value=i["deadline"], inline=False)
         await ctx.reply(embed=embed)
@@ -104,6 +106,7 @@ async def on_message(message):
             if len(goodtasks) != 0:
                 messages.clear()
                 embed = discord.Embed(title="Tasks", description=", ".join(goodtasks))
+                embed.set_thumbnail(url=embed_picture)
                 embed.set_footer(text="Do you want to add tasks?")
                 embed_msg = await message.reply(embed=embed)
                 await embed_msg.add_reaction("❌")
@@ -121,6 +124,7 @@ async def on_message(message):
                             confirmed_embed = discord.Embed(title="Confirmed",
                                                             description=f"{embed.title}\n{', '.join(goodtasks)}",
                                                             colour=discord.Color.green())
+                            embed.set_thumbnail(url=embed_picture)
                             confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
                             member = r[1]
                             dm_embed = discord.Embed(title="Confirmed!",
