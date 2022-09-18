@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from annoy import AnnoyIndex
 import warnings
 
-import initial_processing
+import messages_text_clustering
 import discord
 import app.db as db
 
@@ -49,7 +49,7 @@ def task_ranking_job(messages, tasks):
     # with open("_cohere/_chat.txt", "r") as f:
     #         everything = f.read()
     #         queries = initial_processing.process_chat(everything)
-    queries = initial_processing.process_chat(messages)
+    queries = messages_text_clustering.process_chat(messages)
     queries = list(queries.values())
     # Get the query's embedding
     chat_topics = {}
