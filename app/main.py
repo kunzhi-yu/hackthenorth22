@@ -1,9 +1,11 @@
 import asyncio
+import functools
+import typing
 
 import discord
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
-
+from _cohere import cohere_semantic_extraction
 from _cohere.classification import *
 from _cohere.cohere_shit import *
 from app.db import *
@@ -17,7 +19,10 @@ bot = commands.Bot(command_prefix=".", intents=intents)
 embed_picture = "https://cdn.discordapp.com/attachments/1020748712173109392/1020919160953393213/unknown.png"
 messages = []
 
-showcasedictionary = {}
+showcasedictionary = {
+    '166271462175408130': ['bake cake', 'go to math office hours', 'read research papers', 'get art supplies',
+                           'practice math proofs'],
+    '375149906240733184': ['read research paper', 'Go to the Art Gallery']}
 
 
 # wait_for checks
@@ -40,13 +45,14 @@ async def on_command_error(ctx, error):
 
 @bot.command(aliases=["at", "add"])
 async def addtask(ctx, *args):
+    global messages
     title = " ".join(args)
     reply = await ctx.reply("Please input a description (optional)")
     try:
         d = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
         description = d.content
         try:
-            messages.remove(description)
+            messages = [i for i in messages if i != description]
         except:
             pass
         await d.reply("Please input a deadline (optional)")
@@ -57,7 +63,7 @@ async def addtask(ctx, *args):
         dl = await bot.wait_for("message", check=is_same_author(ctx.author), timeout=60)
         deadline = dl.content
         try:
-            messages.remove(deadline)
+            messages = [i for i in messages if i != deadline]
         except:
             pass
     except asyncio.TimeoutError:
@@ -148,7 +154,7 @@ async def alltasks(ctx):
     desc = ""
     for task in chunked_tasks[index]:
         desc += f"{task['title']} - {task['description']}\n"
-    embed = discord.Embed(title="Tasks", description=f"All tasks\n```js\n{desc}```")
+    embed = discord.Embed(title="Tasks", description=f"All tasks\n```\n{desc}```")
     embed.set_thumbnail(url=embed_picture)
     msg_embed = await ctx.reply(embed=embed)
     await msg_embed.add_reaction("⬅️")
@@ -168,7 +174,7 @@ async def alltasks(ctx):
             it = sorted(chunked_tasks[index], key=lambda x: len(x['title']))
             for task in it:
                 desc += f"{task['title']} - {task['description']}\n"
-            edit_embed = discord.Embed(title="Tasks", description=f"All tasks\n```js\n{desc}```")
+            edit_embed = discord.Embed(title="Tasks", description=f"All tasks\n```\n{desc}```")
             edit_embed.set_thumbnail(url=embed_picture)
             await msg_embed.edit(embed=edit_embed)
         except asyncio.TimeoutError:
@@ -176,6 +182,56 @@ async def alltasks(ctx):
         except:
             pass
 
+async def run_blocking(blocking_func: typing.Callable, *args):
+    func = functools.partial(blocking_func, *args)
+    return await bot.loop.run_in_executor(None, func)
+
+@bot.command(aliases=["tasks", "order"])
+async def sendtasks(ctx):
+    reply_msg = await ctx.reply("Please wait...")
+    content_list = [i.content.strip("\n").strip() async for i in ctx.channel.history(limit=500)]
+    id_list = [str(i.author.id) async for i in ctx.channel.history(limit=500)]
+    relevant_tasks = await run_blocking(cohere_semantic_extraction.main_sent_extract, content_list, id_list)
+    tasks = [i for i in relevant_tasks if i["id"] == str(ctx.author.id)]
+    if not tasks:
+        await ctx.reply("No tasks")
+    if (len(tasks) < 5):
+        chunked_tasks = [tasks]
+    else:
+        chunked_tasks = [tasks[i:i + 5] for i in range(0, len(tasks), 5)]
+
+    index = 0
+    desc = ""
+    for task in chunked_tasks[index]:
+        desc += f"{task['title']} - {task['description']}\n"
+    embed = discord.Embed(title="Tasks", description=f"All tasks\n```\n{desc}```")
+    embed.set_thumbnail(url=embed_picture)
+    await reply_msg.delete()
+    msg_embed = await ctx.reply(embed=embed)
+    await msg_embed.add_reaction("⬅️")
+    await msg_embed.add_reaction("➡️")
+    while True:
+        try:
+            def check(reaction, user):
+                return user != bot.user and str(reaction) in ["⬅️", "➡️"]
+
+            r = await bot.wait_for("reaction_add", check=check, timeout=60)
+            if str(r[0].emoji) == "⬅️":
+                index = max(0, index - 1)
+            elif str(r[0].emoji) == "➡️":
+                index = min(index + 1, len(chunked_tasks))
+
+            desc = ""
+            it = sorted(chunked_tasks[index], key=lambda x: len(x['title']))
+            for task in it:
+                desc += f"{task['title']} - {task['description']}\n"
+            edit_embed = discord.Embed(title="Tasks", description=f"All tasks\n```\n{desc}```")
+            edit_embed.set_thumbnail(url=embed_picture)
+            await msg_embed.edit(embed=edit_embed)
+        except asyncio.TimeoutError:
+            return
+        except:
+            pass
 
 @bot.event
 async def on_message(message):

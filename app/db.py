@@ -28,6 +28,7 @@ def get_data_by_id(userid):
     """
     sql = f"SELECT * FROM TASKS WHERE id = '{userid}';"
     cursor.execute(sql)
+    conn.commit()
     return [{"id": i[0], "title": i[1], "description": i[2], "deadline": i[3]} for i in cursor.fetchall()]
 
 
@@ -36,6 +37,7 @@ def get_all_db():
     """
     sql = f"SELECT * FROM TASKS ORDER BY id;"
     cursor.execute(sql)
+    conn.commit()
     return [{"id": i[0], "title": i[1], "description": i[2],"deadline": i[3]} for i in cursor.fetchall()]
 
 

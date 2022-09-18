@@ -9,7 +9,7 @@ from datasets import load_dataset
 import app.db as db
 from _cohere import messages_text_clustering
 
-api_key = "I0oJB6ppm4jX1nlgQwKPYuZjVZJieG4vXENOTmk9"
+api_key = "j2yWHE4mlHBic6pUwKCGCZbeg1hfHp6xWBi7xBfs"
 
 def task_ranking_job(messages, tasks):
     warnings.filterwarnings('ignore')
@@ -115,7 +115,11 @@ def main_sent_extract(all_messages, ids):
             tasks = [[k['title'], k['description']] for k in records if k["id"].strip("\n").strip() == i]
             ranked_tasks = task_ranking_job(all_messages, tasks)
             id_to_tasks[i] = list(set(ranked_tasks))
-    return id_to_tasks
+    task_list = []
+    for i in list(id_to_tasks.values()):
+        for j in i:
+            task_list += [k for k in records if k["title"] == j]
+    return task_list
 
 
 
