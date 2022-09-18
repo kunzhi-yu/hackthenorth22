@@ -1,4 +1,5 @@
 import asyncio
+import math
 
 import discord
 from discord.ext import commands
@@ -123,15 +124,18 @@ async def on_message(message):
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):
                 tasks[i] = tasks[i].strip("\\n")
-            goodtasks = classifyPrediction(tasks)
+            goodtasks = classifyPredictionSpam(tasks)
             if len(goodtasks) != 0:
                 messages.clear()
-                embed = discord.Embed(title="Tasks", description=", ".join(goodtasks))
+                embed = discord.Embed(title="Tasks", description=goodtasks[0])
                 embed.set_thumbnail(url=embed_picture)
                 embed.set_footer(text="Do you want to add tasks?")
                 embed_msg = await message.reply(embed=embed)
                 await embed_msg.add_reaction("❌")
                 await embed_msg.add_reaction("✅")
+                dm_embed = discord.Embed(title="Confirmed!",
+                                         description=f"{goodtasks[0]}",
+                                         colour=discord.Color.green())
                 while True:
                     try:
                         def check(reaction, user):
@@ -142,16 +146,24 @@ async def on_message(message):
                             await embed_msg.delete()
                             return
                         elif str(r[0].emoji) == "✅":
+                            member = r[1]
+                            await member.send(embed=dm_embed)
+                            write({
+                                "id": str(member.id),
+                                "title": f"{goodtasks[0]}",
+                                "description": "",
+                                "deadline": ""
+                            })
+
+
                             confirmed_embed = discord.Embed(title="Confirmed",
                                                             description=f"{embed.title}\n{', '.join(goodtasks)}",
                                                             colour=discord.Color.green())
                             embed.set_thumbnail(url=embed_picture)
                             confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
-                            member = r[1]
-                            dm_embed = discord.Embed(title="Confirmed!",
-                                                            description=f"{', '.join(goodtasks)}",
-                                                            colour=discord.Color.green())
-                            await member.send(embed = dm_embed)
+
+
+
 
                             await embed_msg.edit(embed=confirmed_embed)
                             user_id = member.id
