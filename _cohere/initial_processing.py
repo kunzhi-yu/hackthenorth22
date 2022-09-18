@@ -10,7 +10,7 @@ import kneed
 
 
 def process_chat(all_string):
-    lines = all_string.split("\n")
+    # lines = all_string.split("\n")
     lines = [line.split(" ") for line in lines]
     # got a list of all lines, with words in them seperated too:
     m = Word2Vec(sentences=lines, vector_size=50, min_count=1, sg=1)

@@ -1,3 +1,4 @@
+from pyexpat.errors import messages
 from re import S
 import cohere
 import numpy as np
@@ -10,9 +11,11 @@ from annoy import AnnoyIndex
 import warnings
 
 import initial_processing
+import discord
+import app.db as db
 
 
-def task_ranking_job(tasks, chat_messages):
+def task_ranking_job(messages, tasks):
 
     warnings.filterwarnings('ignore')
     pd.set_option('display.max_colwidth', None)
@@ -43,9 +46,10 @@ def task_ranking_job(tasks, chat_messages):
     search_index.build(10) # 10 trees
     search_index.save('test.ann')
 
-    with open("_cohere/_chat.txt", "r") as f:
-            everything = f.read()
-            queries = initial_processing.process_chat(everything)
+    # with open("_cohere/_chat.txt", "r") as f:
+    #         everything = f.read()
+    #         queries = initial_processing.process_chat(everything)
+    queries = initial_processing.process_chat(messages)
     queries = list(queries.values())
     # Get the query's embedding
     chat_topics = {}
@@ -67,46 +71,65 @@ def task_ranking_job(tasks, chat_messages):
         print(list(results["texts"]), list(results["distance"]))
         chat_topics[query] = list(results["texts"])#list(zip(results["texts"], results["distance"]))
 
-    # now taking in the database of texts and stufF:
-    with open("_cohere/sematic_search_example.csv") as f:
-        lines = f.read().split("\n")
-        topic_rankings = []
-        for topic in lines:
-            query_embed = co.embed(texts=[topic],
-                        model="large",
-                        truncate="LEFT").embeddings
+    # now taking in the database of tasks and stufF:
+    
+    lines = [task_tup[0] + " \n" + task_tup[1] for task_tup in tasks]
+    topic_rankings = []
+    for topic in lines:
+        query_embed = co.embed(texts=[topic],
+                    model="large",
+                    truncate="LEFT").embeddings
 
-            # Retrieve the nearest neighbors
-            similar_item_ids = search_index.get_nns_by_vector(query_embed[0],10,
-                                                            include_distances=True)
-            # Format the results
-            results = pd.DataFrame(data={'texts': df.iloc[similar_item_ids[0]]['text'], 
-                                        'distance': similar_item_ids[1]})
+        # Retrieve the nearest neighbors
+        similar_item_ids = search_index.get_nns_by_vector(query_embed[0],10,
+                                                        include_distances=True)
+        # Format the results
+        results = pd.DataFrame(data={'texts': df.iloc[similar_item_ids[0]]['text'], 
+                                    'distance': similar_item_ids[1]})
 
 
-            print(f"Query:'{topic}'\nNearest neighbors:")
+        print(f"Query:'{topic}'\nNearest neighbors:")
 
-            print(list(results["texts"]), list(results["distance"]))
-            rando_list = []
-            for idx, text in enumerate(results["texts"]): # list of all sentences tasks were mapped to in order of distance too
-                overall_score = 0
-                for chat_topic in chat_topics:
-                    texts = chat_topics[chat_topic] # the list of all sentences the chat topic groups were mapped to in order of distance
-                    try:
-                        print("OII", texts)
-                        otherindex = texts.index(text)
-                    except:
-                        otherindex = 10
-                    print(abs(idx - otherindex), idx, otherindex)
-                    overall_score -= abs(idx - otherindex)
-                rando_list += [(overall_score + len(set.intersection(set(results["texts"]), set(texts))), text)]
-                print("RANDO ", rando_list)
-            topic_rankings += [(max(rando_list)[0], topic)] # the maxiumum score this todo topic has
-            print("MAIN", topic_rankings)
-    final_rankings  = [tup[1] for tup in sorted(topic_rankings, key=lambda x: x[0])]
+        print(list(results["texts"]), list(results["distance"]))
+        rando_list = []
+        for idx, text in enumerate(results["texts"]): # list of all sentences tasks were mapped to in order of distance too
+            overall_score = 0
+            for chat_topic in chat_topics:
+                texts = chat_topics[chat_topic] # the list of all sentences the chat topic groups were mapped to in order of distance
+                try:
+                    print("OII", texts)
+                    otherindex = texts.index(text)
+                except:
+                    otherindex = 10
+                print(abs(idx - otherindex), idx, otherindex)
+                overall_score -= abs(idx - otherindex)
+            rando_list += [(overall_score + len(set.intersection(set(results["texts"]), set(texts))), text)]
+            print("RANDO ", rando_list)
+        topic_rankings += [(max(rando_list)[0], topic)] # the maxiumum score this todo topic has
+        print("MAIN", topic_rankings)
+
+    final_rankings = [tup[1] for tup in sorted(topic_rankings, key=lambda x: x[0])]
+    final_rankings = [string.split("\n")[0] for string in final_rankings]
     return final_rankings
 
+def main_sent_extract(messages_list):
+    all_messages = [message.content for message in messages_list]
+    ids = [message.id for message in messages_list] 
+    id_to_tasks = {}
+    for id_ in ids:
+        tasks = db.get_data_by_id(id_)
+        tasks = [(task["title"], task["desc"]) for task in tasks]
+        ranked_tasks = task_ranking_job(all_messages, tasks)
+        id_to_tasks[id_] = ranked_tasks
+    return id_to_tasks
 
+
+
+
+
+if __name__ == "__main__":
+
+    print("bruh")
 
 #similarity score calculation:
 """
