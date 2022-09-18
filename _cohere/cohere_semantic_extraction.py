@@ -9,7 +9,7 @@ from datasets import load_dataset
 import app.db as db
 from _cohere import messages_text_clustering
 
-api_key = "j2yWHE4mlHBic6pUwKCGCZbeg1hfHp6xWBi7xBfs"
+api_key = "xlMbeZtBzBSywGghgHQnta7TqMopOdhum5DWNiF8"
 
 def task_ranking_job(messages, tasks):
     warnings.filterwarnings('ignore')
@@ -48,6 +48,8 @@ def task_ranking_job(messages, tasks):
     # Get the query's embedding
     chat_topics = {}
     for query in queries:
+        if query == "":
+            continue
         query_embed = co.embed(texts=[query],
                         model="large",
                         truncate="LEFT").embeddings
