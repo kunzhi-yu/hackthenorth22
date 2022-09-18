@@ -119,11 +119,11 @@ async def alltasks(ctx):
 @bot.event
 async def on_message(message):
     if (message.author.id != bot.user.id):
-        messages.append(message)
-
-        if len(messages) > 10:
+        limit = 10
+        if len(messages) > limit - 1:
             messages.pop(0)
-        if len(messages) == 10:
+        if len(messages) == limit:
+            messages.append(message)
             prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):
