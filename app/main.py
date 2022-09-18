@@ -1,4 +1,5 @@
 import asyncio
+import math
 
 import discord
 from discord.ext import commands
@@ -80,7 +81,7 @@ async def removetask(ctx, title):
 async def alltasks(ctx):
     records = get_all_db()
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
-    chuncked_tasks = [relevant_tasks[i:i + 10] for i in xrange(0, len(relevant_tasks), 5)]
+    chunked_tasks = [relevant_tasks[i:i + 10] for i in range(0, len(relevant_tasks), 5)]
 
     embed = discord.Embed(title="Tasks", description="All tasks")
     index = 0
@@ -95,9 +96,9 @@ async def alltasks(ctx):
                 return user != bot.user and str(reaction) in ["⬅️", "➡️"]
             r = await bot.wait_for("reaction_add", check=check, timeout=60)
             if str(r[0].emoji) == "⬅️":
-                index = math.max(0, index - 1)
+                index = max(0, index - 1)
             elif str(r[0].emoji) == "➡️":
-                index = math.min(index + 1, len(chuncked_tasks))
+                index = min(index + 1, len(chunked_tasks))
             edit_embed = discord.Embed(title="Tasks", description="All tasks")
             for task in chunked_tasks[index]:
                 edit_embed.add_field(name=task["title"], value=task["description"], inline=False)
@@ -122,15 +123,18 @@ async def on_message(message):
             tasks = gettasks(prompt, bot.get_user(message.author.id).name)
             for i in range(len(tasks)):
                 tasks[i] = tasks[i].strip("\\n")
-            goodtasks = classifyPrediction(tasks)
+            goodtasks = classifyPredictionSpam(tasks)
             if len(goodtasks) != 0:
                 messages.clear()
-                embed = discord.Embed(title="Tasks", description=", ".join(goodtasks))
+                embed = discord.Embed(title="Tasks", description=goodtasks[0])
                 embed.set_thumbnail(url=embed_picture)
                 embed.set_footer(text="Do you want to add tasks?")
                 embed_msg = await message.reply(embed=embed)
                 await embed_msg.add_reaction("❌")
                 await embed_msg.add_reaction("✅")
+                dm_embed = discord.Embed(title="Confirmed!",
+                                         description=f"{goodtasks[0]}",
+                                         colour=discord.Color.green())
                 while True:
                     try:
                         def check(reaction, user):
@@ -141,16 +145,24 @@ async def on_message(message):
                             await embed_msg.delete()
                             return
                         elif str(r[0].emoji) == "✅":
+                            member = r[1]
+                            await member.send(embed=dm_embed)
+                            write({
+                                "id": str(member.id),
+                                "title": f"{goodtasks[0]}",
+                                "description": "",
+                                "deadline": ""
+                            })
+
+
                             confirmed_embed = discord.Embed(title="Confirmed",
                                                             description=f"{embed.title}\n{', '.join(goodtasks)}",
                                                             colour=discord.Color.green())
                             embed.set_thumbnail(url=embed_picture)
                             confirmed_embed.set_footer(text=f"{r[0].count - 1} users have joined")
-                            member = r[1]
-                            dm_embed = discord.Embed(title="Confirmed!",
-                                                            description=f"{', '.join(goodtasks)}",
-                                                            colour=discord.Color.green())
-                            await member.send(embed = dm_embed)
+
+
+
 
                             await embed_msg.edit(embed=confirmed_embed)
                             user_id = member.id
