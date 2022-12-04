@@ -148,7 +148,10 @@ async def alltasks(ctx):
     relevant_tasks = [i for i in records if i["id"] == str(ctx.author.id)]
     if not relevant_tasks:
         await ctx.reply("No tasks")
-    chunked_tasks = [relevant_tasks[i:i + 5] for i in range(0, len(relevant_tasks), 5)]
+    if (len(relevant_tasks) < 5):
+        chunked_tasks = [relevant_tasks]
+    else:
+        chunked_tasks = [relevant_tasks[i:i + 5] for i in range(0, len(relevant_tasks), 5)]
 
     index = 0
     desc = ""
@@ -239,9 +242,9 @@ async def on_message(message):
     if (message.author.id != bot.user.id):
         if not (message.content.startswith(".")):
             messages.append(message)
-            if len(messages) > 5:
+            if len(messages) > 10:
                 messages.pop(0)
-            if len(messages) == 5:
+            if len(messages) == 10:
                 prompt = "\n".join([bot.get_user(i.author.id).name + ": " + i.content for i in messages])
                 tasks = gettasks(prompt, bot.get_user(message.author.id).name)
                 for i in range(len(tasks)):
